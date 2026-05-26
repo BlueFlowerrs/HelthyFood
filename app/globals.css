@@ -1,0 +1,161 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap');
+
+@layer base {
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background-color: #DAD6D6;
+    color: #070B06;
+    line-height: 1.6;
+  }
+
+  ::selection {
+    background-color: #8B2C4C;
+    color: white;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #DAD6D6;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #8B2C4C;
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #6B1E38;
+  }
+}
+
+@layer components {
+  .container-main {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 bg-wine text-white px-6 py-3 rounded-lg font-medium
+           hover:bg-wine-dark active:scale-[0.98] transition-all duration-200 disabled:opacity-50
+           disabled:cursor-not-allowed;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 bg-brand-green text-white px-6 py-3 rounded-lg font-medium
+           hover:bg-brand-green-dark active:scale-[0.98] transition-all duration-200 disabled:opacity-50
+           disabled:cursor-not-allowed;
+  }
+
+  .btn-outline {
+    @apply inline-flex items-center justify-center gap-2 border-2 border-wine text-wine px-6 py-3 rounded-lg font-medium
+           hover:bg-wine hover:text-white active:scale-[0.98] transition-all duration-200 disabled:opacity-50
+           disabled:cursor-not-allowed;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 text-wine px-4 py-2 rounded-lg font-medium
+           hover:bg-wine/10 active:scale-[0.98] transition-all duration-200;
+  }
+
+  .btn-dark {
+    @apply inline-flex items-center justify-center gap-2 bg-brand-green-dark text-white px-6 py-3 rounded-lg font-medium
+           hover:bg-brand-green active:scale-[0.98] transition-all duration-200 disabled:opacity-50;
+  }
+
+  .input-field {
+    @apply w-full px-4 py-3 bg-white border border-gray-200 rounded-lg text-text-dark
+           placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-wine/30 focus:border-wine
+           transition-all duration-200;
+  }
+
+  .input-label {
+    @apply block text-sm font-medium text-text-dark mb-1.5;
+  }
+
+  .card {
+    @apply bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden;
+  }
+
+  .card-hover {
+    @apply card hover:shadow-md hover:-translate-y-1 transition-all duration-300;
+  }
+
+  .section-title {
+    @apply text-3xl md:text-4xl font-serif font-semibold text-text-dark;
+  }
+
+  .section-subtitle {
+    @apply text-base md:text-lg text-text-muted mt-3 max-w-2xl;
+  }
+
+  .badge-wine {
+    @apply inline-flex items-center px-3 py-1 bg-wine/10 text-wine text-xs font-semibold rounded-full;
+  }
+
+  .badge-green {
+    @apply inline-flex items-center px-3 py-1 bg-brand-green/10 text-brand-green text-xs font-semibold rounded-full;
+  }
+
+  .badge-sale {
+    @apply absolute top-3 left-3 inline-flex items-center px-2 py-1 bg-wine text-white text-xs font-bold rounded
+           uppercase tracking-wider;
+  }
+
+  .badge-new {
+    @apply absolute top-3 left-3 inline-flex items-center px-2 py-1 bg-brand-green text-white text-xs font-bold rounded
+           uppercase tracking-wider;
+  }
+
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-wine to-wine-dark;
+  }
+
+  .divider {
+    @apply border-t border-gray-200 my-6;
+  }
+
+  .skeleton {
+    @apply animate-pulse bg-gray-200 rounded;
+  }
+}
+
+@layer utilities {
+  .font-serif {
+    font-family: 'Playfair Display', Georgia, serif;
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .bg-grain {
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    opacity: 0.03;
+  }
+
+  .perspective-1000 {
+    perspective: 1000px;
+  }
+
+  .preserve-3d {
+    transform-style: preserve-3d;
+  }
+}

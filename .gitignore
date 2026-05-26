@@ -1,0 +1,23 @@
+.DS_Store
+/node_modules/
+/.next/
+/.react-router/
+/build/
+.vitest/
+next-env.d.ts
+
+# Environment files (NEVER commit secrets)
+.env
+.env.local
+.env.production
+
+# Lock files
+# bun.lockb
+
+# Misc
+*.log
+npm-debug.log*
+
+# IDE
+.vscode/
+.idea/
