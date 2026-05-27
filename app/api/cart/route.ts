@@ -22,10 +22,20 @@ export async function POST(req: Request) {
 
   const { product_id, quantity = 1 } = await req.json()
 
+  // Check if item already exists to increment quantity
+  const { data: existing } = await supabase
+    .from('cart_items')
+    .select('quantity')
+    .eq('user_id', user.id)
+    .eq('product_id', product_id)
+    .maybeSingle()
+
+  const newQuantity = existing ? existing.quantity + quantity : quantity
+
   const { data, error } = await supabase
     .from('cart_items')
     .upsert(
-      { user_id: user.id, product_id, quantity },
+      { user_id: user.id, product_id, quantity: newQuantity },
       { onConflict: 'user_id,product_id' }
     )
     .select()

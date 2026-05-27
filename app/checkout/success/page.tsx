@@ -8,6 +8,9 @@ import { useLocale } from '@/providers/LocaleProvider'
 import { t } from '@/lib/i18n/translations'
 import { Button } from '@/components/ui/Button'
 
+import { Navbar } from '@/components/Navbar'
+import { Footer } from '@/components/Footer'
+
 interface OrderData {
   order_code: string
   total: number
@@ -19,7 +22,7 @@ interface OrderData {
 function SuccessContent() {
   const searchParams = useSearchParams()
   const { locale } = useLocale()
-  const orderCode = searchParams.get('order_code') ?? ''
+  const orderCode = searchParams.get('order_code') ?? searchParams.get('order') ?? ''
 
   const [order, setOrder] = useState<OrderData | null>(null)
 
@@ -99,8 +102,12 @@ function SuccessContent() {
 
 export default function SuccessPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-bg-main flex items-center justify-center"><p>Loading...</p></div>}>
-      <SuccessContent />
-    </Suspense>
+    <>
+      <Navbar />
+      <Suspense fallback={<div className="min-h-screen bg-bg-main flex items-center justify-center"><p>Loading...</p></div>}>
+        <SuccessContent />
+      </Suspense>
+      <Footer />
+    </>
   )
 }

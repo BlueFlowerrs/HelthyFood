@@ -18,5 +18,5 @@
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules", "__create", "src/__create", "plugins"]
+  "exclude": ["node_modules", "__create", "src/__create", "plugins", "web/__create", "web"]
 }

@@ -12,9 +12,7 @@ import { Badge } from '@/components/ui/Badge'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { cn } from '@/lib/cn'
 
-function formatPrice(amount: number) {
-  return new Intl.NumberFormat('vi-VN').format(amount)
-}
+import { formatPrice } from '@/lib/format'
 
 function formatDate(date: string) {
   return new Date(date).toLocaleDateString('vi-VN', {

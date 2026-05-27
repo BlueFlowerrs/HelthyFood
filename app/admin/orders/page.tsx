@@ -10,9 +10,7 @@ import { t } from '@/lib/i18n/translations'
 import { useLocale } from '@/providers/LocaleProvider'
 import { toast } from 'sonner'
 
-function formatPrice(amount: number) {
-  return new Intl.NumberFormat('vi-VN').format(amount)
-}
+import { formatPrice } from '@/lib/format'
 
 function formatDate(date: string) {
   return new Date(date).toLocaleDateString('vi-VN', {

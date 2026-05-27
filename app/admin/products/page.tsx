@@ -13,9 +13,7 @@ import { useLocale } from '@/providers/LocaleProvider'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 
-function formatPrice(amount: number) {
-  return new Intl.NumberFormat('vi-VN').format(amount)
-}
+import { formatPrice } from '@/lib/format'
 
 export default function AdminProductsPage() {
   const { locale } = useLocale()

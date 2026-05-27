@@ -56,10 +56,7 @@ CREATE POLICY "Users update own order items" ON order_items FOR UPDATE USING (
 
 -- Admin can manage all order items
 CREATE POLICY "Admin manage all order items" ON order_items FOR ALL USING (
-  EXISTS (
-    SELECT 1 FROM profiles 
-    WHERE id = auth.uid() AND role = 'admin'
-  )
+  public.is_admin()
 );
 
 -- =============================================
@@ -77,18 +74,12 @@ CREATE POLICY "Public read order by code" ON orders FOR SELECT USING (true);
 
 -- Admin can read all orders
 CREATE POLICY "Admin read all orders" ON orders FOR SELECT USING (
-  EXISTS (
-    SELECT 1 FROM profiles 
-    WHERE id = auth.uid() AND role = 'admin'
-  )
+  public.is_admin()
 );
 
 -- Admin can update all orders
 CREATE POLICY "Admin update all orders" ON orders FOR UPDATE USING (
-  EXISTS (
-    SELECT 1 FROM profiles 
-    WHERE id = auth.uid() AND role = 'admin'
-  )
+  public.is_admin()
 );
 
 -- =============================================
@@ -107,9 +98,7 @@ CREATE POLICY "Service insert payment" ON payments FOR INSERT WITH CHECK (true);
 CREATE POLICY "Service update payment" ON payments FOR UPDATE USING (true);
 
 -- Admin can manage all payments
+DROP POLICY IF EXISTS "Admin manage payments" ON payments;
 CREATE POLICY "Admin manage payments" ON payments FOR ALL USING (
-  EXISTS (
-    SELECT 1 FROM profiles 
-    WHERE id = auth.uid() AND role = 'admin'
-  )
+  public.is_admin()
 );

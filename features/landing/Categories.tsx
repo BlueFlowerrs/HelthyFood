@@ -1,16 +1,64 @@
 'use client'
 
-import { cn } from '@/lib/cn'
 import { useQuery } from '@tanstack/react-query'
+import { motion } from 'framer-motion'
+import { ArrowUpRight } from 'lucide-react'
 import Link from 'next/link'
-import Image from 'next/image'
-import { ArrowRight } from 'lucide-react'
 import { useLocale } from '@/providers/LocaleProvider'
-import { t } from '@/lib/i18n/translations'
 import { createClient } from '@/lib/supabase/client'
 
+const FALLBACK_CAT_IMAGES: Record<string, string> = {
+  'protein-powder': 'https://images.unsplash.com/photo-1593095948071-474c5cc2989d?w=600&h=750&fit=crop',
+  'healthy-meals': 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&h=750&fit=crop',
+  'snacks-bars': 'https://images.unsplash.com/photo-1621939514649-280e2ee25f60?w=600&h=750&fit=crop',
+  supplements: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=600&h=750&fit=crop',
+}
+const DEFAULT_IMG = 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=600&h=750&fit=crop'
+
+function CatTile({ category, index }: { category: Record<string, unknown>; index: number }) {
+  const { locale, t } = useLocale()
+  const name = (category[`name_${locale}`] as string) || (category.name_vi as string)
+  const desc = (category[`description_${locale}`] as string) || (category.description_vi as string)
+  const img = (FALLBACK_CAT_IMAGES[category.slug as string] as string) || (category.image_url as string) || DEFAULT_IMG
+
+  return (
+    <motion.a
+      href={`/shop?category=${category.slug}`}
+      initial={{ opacity: 0, y: 40 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '-50px' }}
+      transition={{ duration: 0.7, delay: index * 0.08 }}
+      className="group relative aspect-[4/5] rounded-3xl overflow-hidden bg-[#223D19] block"
+    >
+      <img
+        src={img}
+        alt={name}
+        loading="lazy"
+        className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+      />
+      <div className="absolute inset-0 bg-gradient-to-t from-[#070B06]/85 via-[#070B06]/30 to-transparent" />
+      <div className="absolute top-5 right-5 w-11 h-11 rounded-full bg-white/15 backdrop-blur-md border border-white/20 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+        <ArrowUpRight className="w-4 h-4" />
+      </div>
+      <div className="absolute bottom-6 left-6 right-6">
+        <div className="text-[10px] uppercase tracking-[0.18em] text-white/60 mb-2">
+          {(category.product_count as number) ?? 0} sản phẩm
+        </div>
+        <h3 className="font-serif text-2xl lg:text-3xl text-white leading-tight mb-2">
+          {name}
+        </h3>
+        {desc && (
+          <p className="text-xs text-white/65 leading-relaxed line-clamp-2 max-w-xs">
+            {desc}
+          </p>
+        )}
+      </div>
+    </motion.a>
+  )
+}
+
 export function Categories() {
-  const { locale } = useLocale()
+  const { t } = useLocale()
   const supabase = createClient()
 
   const { data } = useQuery({
@@ -26,56 +74,30 @@ export function Categories() {
   })
 
   return (
-    <section className="py-20 bg-white">
-      <div className="container-main">
-        <div className="text-center mb-12">
-          <h2 className="section-title">{t('categories.title', locale)}</h2>
-          <p className="section-subtitle mx-auto">{t('categories.subtitle', locale)}</p>
-        </div>
+    <section className="bg-white py-24 lg:py-32">
+      <div className="max-w-[1400px] mx-auto px-6 lg:px-10">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.7 }}
+          className="text-center max-w-2xl mx-auto mb-16"
+        >
+          <span className="text-[11px] uppercase tracking-[0.2em] text-[#8B2C4C] font-medium mb-3 inline-block">
+            {t('categories.label')}
+          </span>
+          <h2 className="font-serif text-[clamp(2.25rem,5vw,4rem)] leading-[1.05] tracking-tight text-[#070B06] font-medium mb-5">
+            {t('categories.title')}
+          </h2>
+          <p className="text-[#070B06]/60 leading-relaxed">
+            {t('categories.subtitle')}
+          </p>
+        </motion.div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          {data?.map((cat, i) => (
-            <Link
-              key={cat.id}
-              href={`/shop?category=${cat.slug}`}
-              className="group text-center"
-            >
-              <div
-                className={cn(
-                  'relative h-28 md:h-36 rounded-2xl overflow-hidden mb-3',
-                  'bg-gradient-to-br from-brand-green/10 to-brand-green-dark/10',
-                  'group-hover:from-brand-green/20 group-hover:to-brand-green-dark/20',
-                  'transition-all duration-300 group-hover:scale-[1.02] group-hover:shadow-lg'
-                )}
-                style={{ animationDelay: `${i * 80}ms` }}
-              >
-                {cat.image_url ? (
-                  <Image
-                    src={cat.image_url}
-                    alt={locale === 'vi' ? cat.name_vi : cat.name_en}
-                    fill
-                    className="object-cover opacity-80 group-hover:opacity-100 transition-opacity"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-4xl">
-                    🌿
-                  </div>
-                )}
-              </div>
-              <h3 className="font-medium text-sm group-hover:text-wine transition-colors">
-                {locale === 'vi' ? cat.name_vi : cat.name_en}
-              </h3>
-            </Link>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 lg:gap-6">
+          {(data ?? []).map((c, i) => (
+            <CatTile key={c.id} category={c} index={i} />
           ))}
-        </div>
-
-        <div className="text-center mt-10">
-          <Link href="/shop">
-            <span className="inline-flex items-center gap-1 text-sm font-medium text-wine hover:text-wine-dark transition-colors">
-              {t('categories.viewAll', locale)}
-              <ArrowRight className="w-4 h-4" />
-            </span>
-          </Link>
         </div>
       </div>
     </section>

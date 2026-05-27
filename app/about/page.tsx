@@ -1,85 +1,139 @@
-import { CTABanner } from '@/features/landing/CTABanner'
+'use client'
+
+import { motion } from 'framer-motion'
+import { Leaf, Award, Users, Sparkles } from 'lucide-react'
+import { useLocale } from '@/providers/LocaleProvider'
+import { ASSETS } from '@/lib/assets'
+import { Navbar } from '@/components/Navbar'
+import { Footer } from '@/components/Footer'
 
 export default function AboutPage() {
+  const { t } = useLocale()
   return (
     <>
-      <div className="bg-brand-green-dark text-white py-20">
-        <div className="container-main">
-          <h1 className="text-4xl md:text-5xl font-serif font-bold mb-4">Giới Thiệu HelthyFood</h1>
-          <p className="text-white/60 text-lg max-w-2xl">
-            Hành trình xây dựng thực phẩm dinh dưỡng cao cấp cho cộng đồng fitness Việt Nam
-          </p>
+      <Navbar />
+      <main className="bg-[#DAD6D6]">
+      {/* Hero */}
+      <section className="relative pt-32 pb-20 lg:pb-28 overflow-hidden">
+        <div className="absolute inset-0 -top-32 opacity-30">
+          <img
+            src={ASSETS.heroBackground}
+            alt=""
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#DAD6D6]" />
         </div>
-      </div>
+        <div className="relative max-w-[1100px] mx-auto px-6 lg:px-10 text-center">
+          <motion.span
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-[11px] uppercase tracking-[0.2em] text-[#8B2C4C] font-medium mb-3 inline-block"
+          >
+            {t('nav.about') || 'Câu chuyện HelthyFood'}
+          </motion.span>
+          <motion.h1
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="font-serif text-[clamp(2.5rem,6vw,5.5rem)] leading-[1.02] tracking-tight text-[#070B06] font-medium mb-6"
+          >
+            {t('about.storyTitle') || 'Dinh dưỡng'}{' '}
+            <em className="italic text-[#8B2C4C]">{t('about.storyTitleAccent') || 'là nghệ thuật'}</em>
+          </motion.h1>
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="text-[#070B06]/70 max-w-2xl mx-auto leading-relaxed"
+          >
+            {t('about.storyDesc') || 'HelthyFood ra đời từ niềm tin rằng dinh dưỡng cao cấp không phải đặc quyền — mà là quyền của mỗi người theo đuổi cuộc sống mạnh mẽ.'}
+          </motion.p>
+        </div>
+      </section>
 
-      <section className="py-20 bg-bg-main">
-        <div className="container-main">
+      {/* Values */}
+      <section className="py-20 lg:py-28 bg-white">
+        <div className="max-w-[1200px] mx-auto px-6 lg:px-10">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
-            <div>
-              <h2 className="section-title mb-6">Sứ Mệnh Của Chúng Tôi</h2>
-              <p className="text-text-muted leading-relaxed mb-4">
-                HelthyFood ra đời từ niềm đam mê với lối sống lành mạnh và tình yêu với ẩm thực dinh dưỡng. 
-                Chúng tôi tin rằng mọi người đều xứng đáng được tiếp cận những thực phẩm chất lượng cao, 
-                tiện lợi và ngon miệng.
+            <motion.div
+              initial={{ opacity: 0, x: -30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.7 }}
+            >
+              <h2 className="font-serif text-4xl lg:text-5xl text-[#070B06] mb-6 leading-tight">
+                {t('about.missionTitle') || 'Sứ mệnh của chúng tôi'}
+              </h2>
+              <p className="text-[#070B06]/70 leading-relaxed mb-5">
+                {t('about.missionDesc1') || 'Chúng tôi mang đến những sản phẩm dinh dưỡng cao cấp được tuyển chọn từ nguồn nguyên liệu hữu cơ, kết hợp công nghệ sản xuất hiện đại và sự am hiểu sâu sắc về khoa học thể thao.'}
               </p>
-              <p className="text-text-muted leading-relaxed mb-4">
-                Từ những bữa ăn prep protein cao cấp đến các snack healthy, mỗi sản phẩm đều được 
-                nghiên cứu kỹ lưỡng về giá trị dinh dưỡng, đảm bảo bạn luôn đạt được mục tiêu fitness của mình.
+              <p className="text-[#070B06]/70 leading-relaxed">
+                {t('about.missionDesc2') || 'Mỗi sản phẩm là một cam kết về chất lượng, sự minh bạch và niềm đam mê với lối sống fitness lành mạnh.'}
               </p>
-              <p className="text-text-muted leading-relaxed">
-                Được thành lập bởi những người yêu gym và fitness, HelthyFood không chỉ là một cửa hàng 
-                — đây là cộng đồng cho những ai theo đuổi lối sống mạnh mẽ.
-              </p>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              {[
-                { value: '24+', label: 'Sản phẩm cao cấp' },
-                { value: '10K+', label: 'Khách hàng tin tưởng' },
-                { value: '4.9★', label: 'Đánh giá trung bình' },
-                { value: '50+', label: 'Năm kinh nghiệm' },
-              ].map((stat) => (
-                <div key={stat.label} className="bg-white rounded-2xl p-6 border border-gray-100 text-center">
-                  <p className="text-3xl font-bold font-serif text-wine">{stat.value}</p>
-                  <p className="text-sm text-text-muted mt-1">{stat.label}</p>
-                </div>
-              ))}
-            </div>
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8 }}
+              className="aspect-square rounded-3xl overflow-hidden bg-[#223D19]"
+            >
+              <img
+                src={ASSETS.lifestyle}
+                alt=""
+                className="w-full h-full object-cover"
+              />
+            </motion.div>
           </div>
         </div>
       </section>
 
-      <section className="py-20 bg-white">
-        <div className="container-main">
-          <h2 className="section-title text-center mb-12">Giá Trị Cốt Lõi</h2>
-          <div className="grid md:grid-cols-3 gap-8">
+      {/* Values grid */}
+      <section className="py-20 lg:py-28 bg-[#DAD6D6]">
+        <div className="max-w-[1200px] mx-auto px-6 lg:px-10">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-[#070B06]/10 border border-[#070B06]/10 rounded-3xl overflow-hidden">
             {[
               {
-                emoji: '🌿',
-                title: 'Chất Lượng',
-                desc: 'Nguyên liệu được tuyển chọn kỹ lưỡng từ các nhà cung cấp uy tín, đạt chuẩn organic.',
+                icon: Leaf,
+                title: t('about.val1Title') || '100% Hữu Cơ',
+                desc: t('about.val1Desc') || 'Nguyên liệu đạt chuẩn quốc tế',
               },
               {
-                emoji: '🔬',
-                title: 'Khoa Học',
-                desc: 'Mỗi sản phẩm được phân tích chi tiết macros — protein, carbs, fat, calories — để bạn dễ dàng theo dõi.',
+                icon: Award,
+                title: t('about.val2Title') || 'Chất Lượng Cao',
+                desc: t('about.val2Desc') || 'Kiểm định nghiêm ngặt',
               },
               {
-                emoji: '💚',
-                title: 'Cộng Đồng',
-                desc: 'HelthyFood đồng hành cùng cộng đồng fitness Việt Nam, từ beginner đến pro.',
+                icon: Users,
+                title: t('about.val3Title') || '15K+ Khách Hàng',
+                desc: t('about.val3Desc') || 'Cộng đồng tin dùng',
               },
-            ].map((item) => (
-              <div key={item.title} className="text-center p-8">
-                <div className="text-5xl mb-4">{item.emoji}</div>
-                <h3 className="font-serif font-semibold text-xl mb-3">{item.title}</h3>
-                <p className="text-text-muted text-sm leading-relaxed">{item.desc}</p>
-              </div>
+              {
+                icon: Sparkles,
+                title: t('about.val4Title') || 'Cao Cấp',
+                desc: t('about.val4Desc') || 'Trải nghiệm sang trọng',
+              },
+            ].map((v, i) => (
+              <motion.div
+                key={v.title}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: i * 0.1 }}
+                className="bg-[#DAD6D6] p-8 hover:bg-white transition-colors"
+              >
+                <v.icon className="w-7 h-7 text-[#8B2C4C] mb-4" />
+                <h3 className="font-serif text-xl text-[#070B06] mb-1">
+                  {v.title}
+                </h3>
+                <p className="text-xs text-[#070B06]/55">{v.desc}</p>
+              </motion.div>
             ))}
           </div>
         </div>
       </section>
-
-      <CTABanner />
+    </main>
+    <Footer />
     </>
   )
 }

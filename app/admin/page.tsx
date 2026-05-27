@@ -9,9 +9,7 @@ import {
 import AdminSidebar from './_components/Sidebar'
 import { Skeleton } from '@/components/ui/Skeleton'
 
-function formatPrice(amount: number) {
-  return new Intl.NumberFormat('vi-VN').format(amount)
-}
+import { formatPrice } from '@/lib/format'
 
 const STATUS_COLORS: Record<string, string> = {
   pending: '#d4a574',

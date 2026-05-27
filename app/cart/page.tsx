@@ -1,181 +1,192 @@
 'use client'
 
-import Link from 'next/link'
-import Image from 'next/image'
-import { Minus, Plus, Trash2, ArrowLeft, ArrowRight, ShoppingBag } from 'lucide-react'
-import { useCartStore } from '@/stores/cartStore'
-import { useUser } from '@/hooks/useUser'
+import { useEffect, useState } from 'react'
+import { motion } from 'framer-motion'
+import { Minus, Plus, Trash2, ShoppingBag, ArrowRight } from 'lucide-react'
+import { useCart } from '@/hooks/useCart'
 import { useLocale } from '@/providers/LocaleProvider'
-import { t } from '@/lib/i18n/translations'
 import { Button } from '@/components/ui/Button'
-import { cn } from '@/lib/cn'
+import { formatVND } from '@/lib/cn'
+import { Navbar } from '@/components/Navbar'
+import { Footer } from '@/components/Footer'
 
-function formatPrice(amount: number) {
-  return new Intl.NumberFormat('vi-VN').format(amount)
+interface CartRowProps {
+  item: any
+  updateQuantity: (id: number, qty: number) => void
+  remove: (id: number) => void
+  locale: string
+}
+
+function CartRow({ item, updateQuantity, remove, locale }: CartRowProps) {
+  const name = locale === 'vi' ? item.product?.name_vi : item.product?.name_en
+  const price = item.product?.sale_price ?? item.product?.price
+
+  return (
+    <div className="flex items-center gap-5 py-6 border-b border-[#070B06]/8">
+      <a
+        href={`/shop/${item.product?.slug}`}
+        className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden bg-[#DAD6D6] flex-shrink-0"
+      >
+        <img
+          src={item.product?.image_url || ''}
+          alt={name}
+          className="w-full h-full object-cover"
+        />
+      </a>
+      <div className="flex-1 min-w-0">
+        <a
+          href={`/shop/${item.product?.slug}`}
+          className="font-serif text-lg text-[#070B06] hover:text-[#8B2C4C] transition-colors block mb-1"
+        >
+          {name}
+        </a>
+        <p className="text-sm text-[#8B2C4C] font-medium">{formatVND(price)}</p>
+      </div>
+      <div className="inline-flex items-center border border-[#070B06]/15 bg-white rounded-full">
+        <button
+          onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+          className="w-9 h-9 flex items-center justify-center text-[#070B06]/60 hover:text-[#070B06]"
+        >
+          <Minus className="w-3.5 h-3.5" />
+        </button>
+        <span className="w-8 text-center text-sm font-medium">
+          {item.quantity}
+        </span>
+        <button
+          onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+          disabled={item.quantity >= item.product.stock}
+          className="w-9 h-9 flex items-center justify-center text-[#070B06]/60 hover:text-[#070B06] disabled:opacity-30"
+        >
+          <Plus className="w-3.5 h-3.5" />
+        </button>
+      </div>
+      <div className="hidden sm:block text-right min-w-[100px]">
+        <p className="font-medium text-[#070B06]">
+          {formatVND(price * item.quantity)}
+        </p>
+      </div>
+      <button
+        onClick={() => remove(item.product.id)}
+        className="p-2 text-[#070B06]/40 hover:text-[#8B2C4C] transition-colors"
+      >
+        <Trash2 className="w-4 h-4" />
+      </button>
+    </div>
+  )
 }
 
 export default function CartPage() {
-  const { locale } = useLocale()
-  const { user } = useUser()
-  const { items, remove, updateQuantity, getTotal, getSavings } = useCartStore()
+  const { locale, t } = useLocale()
+  const { items, remove, updateQuantity, subtotal, count } = useCart()
+  const [mounted, setMounted] = useState(false)
 
-  const total = getTotal()
-  const savings = getSavings()
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
-  if (items.length === 0) {
+  if (!mounted) {
     return (
-      <div className="min-h-screen bg-bg-main flex items-center justify-center">
-        <div className="text-center max-w-md mx-auto px-4">
-          <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <ShoppingBag className="w-10 h-10 text-gray-400" />
-          </div>
-          <h1 className="text-2xl font-serif font-bold mb-3">{t('cart.empty', locale)}</h1>
-          <p className="text-text-muted mb-8">{t('cart.emptyDesc', locale)}</p>
-          <Link href="/shop">
-            <Button size="lg">{t('cart.shopNow', locale)}</Button>
-          </Link>
-        </div>
-      </div>
+      <>
+        <Navbar />
+        <main className="pt-28 pb-20 bg-[#DAD6D6] min-h-screen" />
+        <Footer />
+      </>
     )
   }
 
   return (
-    <div className="min-h-screen bg-bg-main">
-      <div className="container-main py-8">
-        <h1 className="text-3xl font-serif font-bold mb-8">{t('cart.title', locale)}</h1>
+    <>
+      <Navbar />
+      <main className="pt-28 pb-20 bg-[#DAD6D6] min-h-screen">
+      <div className="max-w-[1400px] mx-auto px-6 lg:px-10">
+        <motion.h1
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="font-serif text-[clamp(2.5rem,5vw,4.5rem)] leading-[1.05] tracking-tight text-[#070B06] font-medium mb-2"
+        >
+          {t('cart.title') || 'Giỏ hàng'}
+        </motion.h1>
+        <p className="text-[#070B06]/60 mb-12">
+          {count} {t('cart.itemCount') || 'sản phẩm'}
+        </p>
 
-        <div className="grid lg:grid-cols-3 gap-8">
-          {/* Items */}
-          <div className="lg:col-span-2 space-y-4">
-            {items.map(({ product, quantity }) => {
-              const price = product.sale_price ?? product.price
-              const originalPrice = product.price
-              const isOnSale = product.sale_price !== null
-              const subtotal = price * quantity
-
-              return (
-                <div
-                  key={product.id}
-                  className="bg-white rounded-xl p-4 flex gap-4 border border-gray-100"
-                >
-                  <Link href={`/shop/${product.slug}`}>
-                    <div className="relative w-24 h-24 bg-gray-100 rounded-lg overflow-hidden shrink-0">
-                      {product.image_url ? (
-                        <Image
-                          src={product.image_url}
-                          alt={locale === 'vi' ? product.name_vi : product.name_en}
-                          fill
-                          className="object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-brand-green/20 to-wine/20" />
-                      )}
-                    </div>
-                  </Link>
-
-                  <div className="flex-1 min-w-0">
-                    <div className="flex justify-between items-start gap-4">
-                      <div>
-                        <Link href={`/shop/${product.slug}`}>
-                          <h3 className="font-medium hover:text-wine transition-colors">
-                            {locale === 'vi' ? product.name_vi : product.name_en}
-                          </h3>
-                        </Link>
-                        <div className="flex items-center gap-2 mt-1">
-                          <span className="text-wine font-bold">{formatPrice(price)}đ</span>
-                          {isOnSale && (
-                            <span className="text-xs text-gray-400 line-through">
-                              {formatPrice(originalPrice)}đ
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => remove(product.id)}
-                        className="p-2 text-gray-400 hover:text-red-500 transition-colors shrink-0"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-
-                    <div className="flex items-center justify-between mt-4">
-                      <div className="flex items-center gap-2 bg-gray-100 rounded-lg">
-                        <button
-                          onClick={() => updateQuantity(product.id, quantity - 1)}
-                          className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
-                        >
-                          <Minus className="w-3 h-3" />
-                        </button>
-                        <span className="px-3 font-medium min-w-[32px] text-center">
-                          {quantity}
-                        </span>
-                        <button
-                          onClick={() => updateQuantity(product.id, quantity + 1)}
-                          className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
-                          disabled={quantity >= product.stock}
-                        >
-                          <Plus className="w-3 h-3" />
-                        </button>
-                      </div>
-                      <p className="font-semibold text-wine">{formatPrice(subtotal)}đ</p>
-                    </div>
-                  </div>
-                </div>
-              )
-            })}
+        {items.length === 0 ? (
+          <div className="bg-white rounded-3xl p-16 text-center max-w-xl mx-auto border border-gray-100">
+            <div className="w-16 h-16 rounded-full bg-[#DAD6D6] mx-auto mb-6 flex items-center justify-center">
+              <ShoppingBag className="w-7 h-7 text-[#070B06]/40" />
+            </div>
+            <h2 className="font-serif text-2xl text-[#070B06] mb-2">
+              {t('cart.empty') || 'Giỏ hàng của bạn đang trống'}
+            </h2>
+            <p className="text-[#070B06]/60 mb-8">
+              {t('cart.emptyDesc') || 'Hãy thêm các sản phẩm dinh dưỡng cao cấp của chúng tôi vào giỏ hàng.'}
+            </p>
+            <a href="/shop">
+              <Button variant="primary" size="lg">
+                {t('cart.shopNow') || 'Mua sắm ngay'}
+              </Button>
+            </a>
           </div>
-
-          {/* Summary */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-xl p-6 border border-gray-100 sticky top-24">
-              <h2 className="font-semibold mb-4">{t('checkout.orderSummary', locale)}</h2>
-
-              <div className="space-y-3 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-text-muted">{t('cart.subtotal', locale)}</span>
-                  <span>{formatPrice(total + savings)}đ</span>
+        ) : (
+          <div className="grid lg:grid-cols-[1fr_380px] gap-10">
+            <div className="bg-white/50 rounded-3xl p-6 lg:p-8">
+              {items.map((item) => (
+                <CartRow
+                  key={item.product.id}
+                  item={item}
+                  updateQuantity={updateQuantity}
+                  remove={remove}
+                  locale={locale}
+                />
+              ))}
+            </div>
+            <aside className="bg-[#223D19] text-white rounded-3xl p-8 h-fit lg:sticky lg:top-28">
+              <h2 className="font-serif text-2xl mb-6">
+                {t('checkout.orderSummary') || 'Tóm tắt đơn hàng'}
+              </h2>
+              <div className="space-y-3 mb-6 pb-6 border-b border-white/15">
+                <div className="flex justify-between text-sm">
+                  <span className="text-white/70">
+                    {t('common.subtotal') || 'Tạm tính'}
+                  </span>
+                  <span>{formatVND(subtotal)}</span>
                 </div>
-                {savings > 0 && (
-                  <div className="flex justify-between text-green-600">
-                    <span>{t('cart.savings', locale)}</span>
-                    <span>-{formatPrice(savings)}đ</span>
-                  </div>
-                )}
-                <div className="flex justify-between">
-                  <span className="text-text-muted">Vận chuyển</span>
-                  <span className="text-green-600">Miễn phí</span>
+                <div className="flex justify-between text-sm">
+                  <span className="text-white/70">
+                    {t('common.shipping') || 'Vận chuyển'}
+                  </span>
+                  <span className="text-[#d4a574]">
+                    {t('common.free') || 'Miễn phí'}
+                  </span>
                 </div>
               </div>
-
-              <div className="border-t border-gray-200 my-4 pt-4">
-                <div className="flex justify-between items-center">
-                  <span className="font-semibold">{t('cart.total', locale)}</span>
-                  <span className="text-2xl font-bold text-wine">{formatPrice(total)}đ</span>
-                </div>
+              <div className="flex justify-between items-baseline mb-6">
+                <span className="text-sm uppercase tracking-wider text-white/70">
+                  {t('common.total') || 'Tổng cộng'}
+                </span>
+                <span className="font-serif text-3xl">
+                  {formatVND(subtotal)}
+                </span>
               </div>
-
-              <p className="text-xs text-center text-gray-400 mb-4">
-                {t('cart.freeShipping', locale)}
-              </p>
-
-              <Link href="/checkout" className="block">
-                <Button className="w-full gap-2">
-                  {t('cart.checkout', locale)}
+              <a href="/checkout" className="block">
+                <Button variant="primary" size="lg" className="w-full flex items-center justify-center gap-2">
+                  {t('cart.proceedCheckout') || 'Tiến hành thanh toán'}
                   <ArrowRight className="w-4 h-4" />
                 </Button>
-              </Link>
-
-              <Link
+              </a>
+              <a
                 href="/shop"
-                className="flex items-center justify-center gap-2 mt-3 text-sm text-text-muted hover:text-wine transition-colors"
+                className="block text-center text-sm text-white/60 hover:text-white mt-4 transition-colors"
               >
-                <ArrowLeft className="w-4 h-4" />
-                {t('cart.continueShopping', locale)}
-              </Link>
-            </div>
+                {t('common.continueShop') || 'Tiếp tục mua sắm'}
+              </a>
+            </aside>
           </div>
-        </div>
+        )}
       </div>
-    </div>
+    </main>
+    <Footer />
+    </>
   )
 }

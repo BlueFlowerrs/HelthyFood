@@ -1,40 +1,55 @@
 'use client'
 
-import { Dumbbell, Clock, Apple, UtensilsCrossed } from 'lucide-react'
+import { motion, useScroll, useTransform } from 'framer-motion'
+import { useRef } from 'react'
 import { useLocale } from '@/providers/LocaleProvider'
-import { t } from '@/lib/i18n/translations'
 
-const moments = [
-  { icon: Dumbbell, bg: 'bg-wine/10', accent: 'text-wine', key: 'post' },
-  { icon: Clock, bg: 'bg-brand-green/10', accent: 'text-brand-green', key: 'pre' },
-  { icon: Apple, bg: 'bg-amber-100', accent: 'text-amber-600', key: 'snack' },
-  { icon: UtensilsCrossed, bg: 'bg-tan/10', accent: 'text-tan', key: 'meal' },
-]
+const LIFESTYLE_IMAGE = 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=1920&h=1080&fit=crop'
 
 export function Lifestyle() {
-  const { locale } = useLocale()
+  const { t } = useLocale()
+  const ref = useRef(null)
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ['start end', 'end start'],
+  })
+  const y = useTransform(scrollYProgress, [0, 1], ['-10%', '10%'])
 
   return (
-    <section className="py-20 bg-white">
-      <div className="container-main">
-        <div className="text-center mb-12">
-          <h2 className="section-title">{t('lifestyle.title', locale)}</h2>
-          <p className="section-subtitle mx-auto">{t('lifestyle.subtitle', locale)}</p>
-        </div>
+    <section
+      ref={ref}
+      className="relative h-[80vh] min-h-[600px] overflow-hidden bg-[#070B06]"
+    >
+      <motion.div
+        style={{ y }}
+        className="absolute inset-0 -top-[10%] -bottom-[10%]"
+      >
+        <img
+          src={LIFESTYLE_IMAGE}
+          alt="Healthy lifestyle"
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#070B06]/85 via-[#070B06]/40 to-[#070B06]/85" />
+      </motion.div>
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-          {moments.map(({ icon: Icon, bg, accent, key }) => (
-            <div
-              key={key}
-              className="text-center p-8 rounded-3xl bg-gray-50 hover:bg-gray-100 transition-colors group"
-            >
-              <div className={`w-20 h-20 ${bg} rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform`}>
-                <Icon className={`w-9 h-9 ${accent}`} />
-              </div>
-              <p className="font-serif text-lg font-semibold">{t(`lifestyle.${key}`, locale)}</p>
-            </div>
-          ))}
-        </div>
+      <div className="relative z-10 h-full max-w-[1400px] mx-auto px-6 lg:px-10 flex items-center">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 1 }}
+          className="max-w-3xl"
+        >
+          <div className="text-7xl font-serif text-[#d4a574]/70 mb-4 leading-none">
+            &ldquo;
+          </div>
+          <p className="font-serif text-[clamp(2rem,4vw,3.5rem)] leading-[1.15] text-white font-light italic mb-8">
+            {t('lifestyle.quote')}
+          </p>
+          <p className="text-sm uppercase tracking-[0.25em] text-white/60">
+            {t('lifestyle.author')}
+          </p>
+        </motion.div>
       </div>
     </section>
   )

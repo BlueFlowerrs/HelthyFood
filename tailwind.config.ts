@@ -7,6 +7,8 @@ const config: Config = {
     './features/**/*.{js,ts,jsx,tsx,mdx}',
     './hooks/**/*.{js,ts,jsx,tsx,mdx}',
     './lib/**/*.{js,ts,jsx,tsx,mdx}',
+    './stores/**/*.{js,ts,jsx,tsx,mdx}',
+    './providers/**/*.{js,ts,jsx,tsx,mdx}',
   ],
   theme: {
     extend: {

@@ -119,6 +119,21 @@ CREATE INDEX idx_cart_user ON cart_items(user_id);
 -- ROW LEVEL SECURITY (RLS)
 -- =============================================
 
+-- Security definer helper to check if a user is admin without causing policy recursion
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS boolean
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM public.profiles
+    WHERE id = auth.uid() AND role = 'admin'
+  );
+END;
+$$;
+
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE products ENABLE ROW LEVEL SECURITY;
@@ -131,22 +146,22 @@ ALTER TABLE payments ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can view own profile" ON profiles FOR SELECT USING (auth.uid() = id);
 CREATE POLICY "Users can update own profile" ON profiles FOR UPDATE USING (auth.uid() = id);
 CREATE POLICY "Admins can view all profiles" ON profiles FOR SELECT USING (
-  EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+  public.is_admin()
 );
 
 -- categories: public read
 CREATE POLICY "Public read categories" ON categories FOR SELECT USING (true);
 CREATE POLICY "Admin manage categories" ON categories FOR ALL USING (
-  EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+  public.is_admin()
 );
 
 -- products: public read for active products
 CREATE POLICY "Public read active products" ON products FOR SELECT USING (active = true);
 CREATE POLICY "Admin read all products" ON products FOR SELECT USING (
-  EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+  public.is_admin()
 );
 CREATE POLICY "Admin manage products" ON products FOR ALL USING (
-  EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+  public.is_admin()
 );
 
 -- cart_items
@@ -155,7 +170,7 @@ CREATE POLICY "Users manage own cart" ON cart_items FOR ALL USING (auth.uid() = 
 -- orders: users own their orders; guests via order_code (handled in server routes)
 CREATE POLICY "Users view own orders" ON orders FOR SELECT USING (auth.uid() = user_id);
 CREATE POLICY "Admin view all orders" ON orders FOR ALL USING (
-  EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+  public.is_admin()
 );
 CREATE POLICY "Anyone can create orders" ON orders FOR INSERT WITH CHECK (true);
 CREATE POLICY "Public read order by code" ON orders FOR SELECT USING (true);
@@ -167,7 +182,7 @@ CREATE POLICY "Public update order items" ON order_items FOR UPDATE USING (true)
 
 -- payments: admin only + public insert/update for payment callbacks
 CREATE POLICY "Admin manage payments" ON payments FOR ALL USING (
-  EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+  public.is_admin()
 );
 CREATE POLICY "Anyone insert payment" ON payments FOR INSERT WITH CHECK (true);
 CREATE POLICY "Public update payment" ON payments FOR UPDATE USING (true);

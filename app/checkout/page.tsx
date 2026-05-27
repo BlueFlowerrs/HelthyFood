@@ -1,25 +1,26 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import Image from 'next/image'
-import { ArrowLeft, ShoppingBag } from 'lucide-react'
-import { useCartStore } from '@/stores/cartStore'
+import { ArrowLeft, ShoppingBag, Lock, ChevronRight, CreditCard, Banknote, User } from 'lucide-react'
+import { useCart } from '@/hooks/useCart'
+import { type CartProduct } from '@/stores/cartStore'
 import { useLocale } from '@/providers/LocaleProvider'
-import { t } from '@/lib/i18n/translations'
 import { Button } from '@/components/ui/Button'
 import { Input, Textarea } from '@/components/ui/Input'
 import { toast } from 'sonner'
-
-function formatPrice(amount: number) {
-  return new Intl.NumberFormat('vi-VN').format(amount)
-}
+import { formatVND } from '@/lib/cn'
+import { useUser } from '@/hooks/useUser'
+import { motion } from 'framer-motion'
+import { Navbar } from '@/components/Navbar'
+import { Footer } from '@/components/Footer'
 
 export default function CheckoutPage() {
   const router = useRouter()
-  const { locale } = useLocale()
-  const { items, getTotal, getSavings, clear } = useCartStore()
+  const { locale, t } = useLocale()
+  const { items, subtotal: total, savings, clear } = useCart()
+  const { user } = useUser()
 
   const [form, setForm] = useState({
     shipping_name: '',
@@ -31,9 +32,41 @@ export default function CheckoutPage() {
   })
   const [loading, setLoading] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [mounted, setMounted] = useState(false)
 
-  const total = getTotal()
-  const savings = getSavings()
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  // Prefill profile only for logged-in users
+  useEffect(() => {
+    if (!user) return
+    ;(async () => {
+      try {
+        const res = await fetch('/api/profile')
+        if (res.ok) {
+          const data = await res.json()
+          if (data.profile) {
+            setForm((f) => ({
+              ...f,
+              shipping_name: data.profile.full_name || '',
+              shipping_phone: data.profile.phone || '',
+              shipping_address: data.profile.address || '',
+              shipping_city: data.profile.city || '',
+            }))
+          }
+        }
+      } catch (e) {
+        console.error(e)
+      }
+    })()
+  }, [user])
+
+  if (!mounted) {
+    return <main className="pt-28 pb-20 bg-[#DAD6D6] min-h-screen" />
+  }
+
+
 
   const updateForm = (key: string, value: string) => {
     setForm((f) => ({ ...f, [key]: value }))
@@ -42,14 +75,15 @@ export default function CheckoutPage() {
 
   const validate = () => {
     const errs: Record<string, string> = {}
-    if (!form.shipping_name.trim()) errs.shipping_name = t('validation.required', locale)
-    if (!form.shipping_phone.trim()) errs.shipping_phone = t('validation.required', locale)
-    if (!form.shipping_address.trim()) errs.shipping_address = t('validation.required', locale)
-    if (!form.shipping_city.trim()) errs.shipping_city = t('validation.required', locale)
+    if (!form.shipping_name.trim()) errs.shipping_name = locale === 'vi' ? 'Họ và tên là bắt buộc' : 'Full name is required'
+    if (!form.shipping_phone.trim()) errs.shipping_phone = locale === 'vi' ? 'Số điện thoại là bắt buộc' : 'Phone is required'
+    if (!form.shipping_address.trim()) errs.shipping_address = locale === 'vi' ? 'Địa chỉ là bắt buộc' : 'Address is required'
+    if (!form.shipping_city.trim()) errs.shipping_city = locale === 'vi' ? 'Thành phố là bắt buộc' : 'City is required'
     return errs
   }
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
     const errs = validate()
     if (Object.keys(errs).length) {
       setErrors(errs)
@@ -82,15 +116,36 @@ export default function CheckoutPage() {
       // Save to localStorage for guest order lookup
       if (typeof window !== 'undefined') {
         localStorage.setItem('helthyfood:lastOrder', JSON.stringify(orderData.order))
+        
+        // Save guest order to list of guest orders
+        if (!user) {
+          try {
+            const existing = JSON.parse(localStorage.getItem('hf_guest_orders') || '[]')
+            existing.unshift({
+              order_code: orderData.order.order_code,
+              total: orderData.order.total,
+              created_at: orderData.order.created_at || new Date().toISOString(),
+              shipping_name: form.shipping_name,
+              status: 'pending',
+            })
+            localStorage.setItem('hf_guest_orders', JSON.stringify(existing.slice(0, 20)))
+          } catch (e) {
+            console.error('Could not save guest order', e)
+          }
+        }
       }
 
       // Clear cart
       clear()
 
-      // Navigate to payment
-      router.push(`/checkout/payment?order_id=${orderData.order.id}&amount=${total}&order_code=${orderData.order.order_code}`)
+      // Navigate to payment / success
+      if (form.payment_method === 'vnpay') {
+        router.push(`/checkout/payment?order_id=${orderData.order.id}&amount=${total}&order_code=${orderData.order.order_code}`)
+      } else {
+        router.push(`/checkout/success?order=${orderData.order.order_code}`)
+      }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('common.error', locale))
+      toast.error(err instanceof Error ? err.message : (locale === 'vi' ? 'Đã xảy ra lỗi' : 'An error occurred'))
     } finally {
       setLoading(false)
     }
@@ -98,43 +153,84 @@ export default function CheckoutPage() {
 
   if (items.length === 0) {
     return (
-      <div className="min-h-screen bg-bg-main flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <ShoppingBag className="w-10 h-10 text-gray-400" />
+      <>
+        <Navbar />
+        <main className="pt-28 pb-20 bg-[#DAD6D6] min-h-screen flex items-center justify-center">
+          <div className="text-center max-w-md mx-auto px-4">
+            <div className="w-24 h-24 bg-white/50 rounded-full flex items-center justify-center mx-auto mb-6">
+              <ShoppingBag className="w-10 h-10 text-gray-400" />
+            </div>
+            <h1 className="text-2xl font-serif font-bold mb-4">{t('cart.empty') || 'Giỏ hàng trống'}</h1>
+            <a href="/shop">
+              <Button variant="primary" size="lg">{t('cart.shopNow') || 'Mua sắm ngay'}</Button>
+            </a>
           </div>
-          <h1 className="text-2xl font-serif font-bold mb-4">{t('cart.empty', locale)}</h1>
-          <Link href="/shop">
-            <Button>{t('cart.shopNow', locale)}</Button>
-          </Link>
-        </div>
-      </div>
+        </main>
+        <Footer />
+      </>
     )
   }
 
   return (
-    <div className="min-h-screen bg-bg-main">
-      <div className="container-main py-8">
-        <Link
-          href="/cart"
-          className="inline-flex items-center gap-2 text-sm text-text-muted hover:text-wine mb-6 transition-colors"
+    <>
+      <Navbar />
+      <main className="pt-28 pb-20 bg-[#DAD6D6] min-h-screen">
+      <div className="max-w-[1400px] mx-auto px-6 lg:px-10">
+        <div className="mb-6">
+          <Link
+            href="/cart"
+            className="inline-flex items-center gap-2 text-xs uppercase tracking-wider text-[#070B06]/60 hover:text-[#8B2C4C] transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            {t('cart.continueShopping') || 'Quay lại giỏ hàng'}
+          </Link>
+        </div>
+
+        <motion.h1
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="font-serif text-[clamp(2.5rem,5vw,4rem)] leading-[1.05] tracking-tight text-[#070B06] font-medium mb-10"
         >
-          <ArrowLeft className="w-4 h-4" />
-          {t('cart.continueShopping', locale)}
-        </Link>
+          {t('checkout.title') || 'Thanh toán'}
+        </motion.h1>
 
-        <h1 className="text-3xl font-serif font-bold mb-8">{t('checkout.title', locale)}</h1>
+        {/* Guest sign-in nudge */}
+        {!user && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex items-center gap-3 bg-white border border-[#070B06]/8 rounded-2xl px-5 py-4 mb-8"
+          >
+            <div className="w-9 h-9 rounded-full bg-[#8B2C4C]/10 flex items-center justify-center flex-shrink-0">
+              <User className="w-4 h-4 text-[#8B2C4C]" />
+            </div>
+            <p className="text-sm text-[#070B06]/70 flex-1">
+              Có tài khoản?{' '}
+              <a
+                href="/account/signin?callbackUrl=/checkout"
+                className="text-[#8B2C4C] font-medium hover:underline"
+              >
+                Đăng nhập
+              </a>{' '}
+              để lưu thông tin và xem lịch sử đơn hàng.
+            </p>
+          </motion.div>
+        )}
 
-        <div className="grid lg:grid-cols-3 gap-8">
-          {/* Form */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Shipping Info */}
-            <div className="bg-white rounded-xl p-6 border border-gray-100">
-              <h2 className="font-semibold mb-6">{t('checkout.shippingInfo', locale)}</h2>
-              <div className="grid sm:grid-cols-2 gap-4">
-                <div className="sm:col-span-2">
+        <form
+          onSubmit={handleSubmit}
+          className="grid lg:grid-cols-[1fr_400px] gap-10"
+        >
+          <div className="space-y-8">
+            {/* Shipping */}
+            <section className="bg-white rounded-3xl p-8 border border-gray-100">
+              <h2 className="font-serif text-2xl text-[#070B06] mb-6">
+                {t('checkout.shippingInfo') || 'Thông tin giao hàng'}
+              </h2>
+              <div className="grid sm:grid-cols-2 gap-5">
+                <div>
                   <Input
-                    label={t('checkout.fullName', locale)}
+                    label={t('checkout.fullName') || 'Họ và tên'}
                     value={form.shipping_name}
                     onChange={(e) => updateForm('shipping_name', e.target.value)}
                     error={errors.shipping_name}
@@ -144,7 +240,7 @@ export default function CheckoutPage() {
                 </div>
                 <div>
                   <Input
-                    label={t('checkout.phone', locale)}
+                    label={t('checkout.phone') || 'Số điện thoại'}
                     value={form.shipping_phone}
                     onChange={(e) => updateForm('shipping_phone', e.target.value)}
                     error={errors.shipping_phone}
@@ -153,19 +249,9 @@ export default function CheckoutPage() {
                     type="tel"
                   />
                 </div>
-                <div>
-                  <Input
-                    label={t('checkout.city', locale)}
-                    value={form.shipping_city}
-                    onChange={(e) => updateForm('shipping_city', e.target.value)}
-                    error={errors.shipping_city}
-                    required
-                    placeholder="TP. Hồ Chí Minh"
-                  />
-                </div>
                 <div className="sm:col-span-2">
                   <Input
-                    label={t('checkout.address', locale)}
+                    label={t('checkout.address') || 'Địa chỉ'}
                     value={form.shipping_address}
                     onChange={(e) => updateForm('shipping_address', e.target.value)}
                     error={errors.shipping_address}
@@ -173,122 +259,157 @@ export default function CheckoutPage() {
                     placeholder="123 Nguyễn Trãi, Quận 1"
                   />
                 </div>
-                <div className="sm:col-span-2">
-                  <Textarea
-                    label={t('checkout.notes', locale)}
-                    value={form.notes}
-                    onChange={(e) => updateForm('notes', e.target.value)}
-                    placeholder="Ghi chú thêm..."
-                    rows={2}
+                <div>
+                  <Input
+                    label={t('checkout.city') || 'Tỉnh / Thành phố'}
+                    value={form.shipping_city}
+                    onChange={(e) => updateForm('shipping_city', e.target.value)}
+                    error={errors.shipping_city}
+                    required
+                    placeholder="TP. Hồ Chí Minh"
                   />
                 </div>
               </div>
-            </div>
-
-            {/* Payment Method */}
-            <div className="bg-white rounded-xl p-6 border border-gray-100">
-              <h2 className="font-semibold mb-6">{t('checkout.paymentMethod', locale)}</h2>
-              <div className="space-y-3">
-                <label
-                  className={`flex items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition-colors ${
-                    form.payment_method === 'vnpay'
-                      ? 'border-wine bg-wine/5'
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="payment"
-                    value="vnpay"
-                    checked={form.payment_method === 'vnpay'}
-                    onChange={(e) => updateForm('payment_method', e.target.value)}
-                    className="accent-wine"
-                  />
-                  <div>
-                    <p className="font-medium">{t('checkout.vnpay', locale)}</p>
-                    <p className="text-xs text-text-muted">{t('checkout.vnpayDesc', locale)}</p>
-                  </div>
-                  <div className="ml-auto">
-                    <div className="bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded">
-                      VNPAY
-                    </div>
-                  </div>
-                </label>
+              <div className="mt-5">
+                <Input
+                  label={t('checkout.notes') || 'Ghi chú đơn hàng'}
+                  value={form.notes}
+                  onChange={(e) => updateForm('notes', e.target.value)}
+                  placeholder="Ghi chú thêm..."
+                />
               </div>
-            </div>
+            </section>
+
+            {/* Payment method */}
+            <section className="bg-white rounded-3xl p-8 border border-gray-100">
+              <h2 className="font-serif text-2xl text-[#070B06] mb-6">
+                {t('checkout.paymentMethod') || 'Phương thức thanh toán'}
+              </h2>
+              <div className="space-y-3">
+                {[
+                  {
+                    id: 'vnpay',
+                    icon: CreditCard,
+                    label: t('checkout.vnpay') || 'Cổng thanh toán VNPAY',
+                    desc: t('checkout.vnpayDesc') || 'Thanh toán qua ATM, Thẻ tín dụng, QR Code',
+                  },
+                  {
+                    id: 'cod',
+                    icon: Banknote,
+                    label: t('checkout.cod') || 'Thanh toán khi nhận hàng (COD)',
+                    desc: t('checkout.codDesc') || 'Thanh toán bằng tiền mặt khi giao hàng',
+                  },
+                ].map((m) => (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => updateForm('payment_method', m.id)}
+                    className={`w-full flex items-center gap-4 p-5 rounded-2xl border-2 transition-colors text-left ${
+                      form.payment_method === m.id
+                        ? 'border-[#8B2C4C] bg-[#8B2C4C]/5'
+                        : 'border-[#070B06]/10 hover:border-[#070B06]/20'
+                    }`}
+                  >
+                    <div
+                      className={`w-11 h-11 rounded-full flex items-center justify-center ${
+                        form.payment_method === m.id
+                          ? 'bg-[#8B2C4C] text-white'
+                          : 'bg-[#DAD6D6] text-[#070B06]/60'
+                      }`}
+                    >
+                      <m.icon className="w-5 h-5" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="font-medium text-[#070B06]">
+                        {m.label}
+                      </div>
+                      <div className="text-xs text-[#070B06]/55">
+                        {m.desc}
+                      </div>
+                    </div>
+                    <div
+                      className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                        form.payment_method === m.id
+                          ? 'border-[#8B2C4C]'
+                          : 'border-[#070B06]/20'
+                      }`}
+                    >
+                      {form.payment_method === m.id && (
+                        <div className="w-2.5 h-2.5 rounded-full bg-[#8B2C4C]" />
+                      )}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </section>
           </div>
 
-          {/* Order Summary */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-xl p-6 border border-gray-100 sticky top-24">
-              <h2 className="font-semibold mb-4">{t('checkout.orderSummary', locale)}</h2>
-
-              <ul className="space-y-3 mb-4">
-                {items.map(({ product, quantity }) => (
-                  <li key={product.id} className="flex gap-3">
-                    <div className="relative w-14 h-14 bg-gray-100 rounded-lg overflow-hidden shrink-0">
-                      {product.image_url ? (
-                        <Image
-                          src={product.image_url}
-                          alt={locale === 'vi' ? product.name_vi : product.name_en}
-                          fill
-                          className="object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-brand-green/20 to-wine/20" />
-                      )}
-                      <span className="absolute -top-1 -right-1 w-5 h-5 bg-wine text-white text-[10px] font-bold rounded-full flex items-center justify-center">
-                        {quantity}
-                      </span>
+          {/* Summary */}
+          <aside className="bg-[#223D19] text-white rounded-3xl p-8 h-fit lg:sticky lg:top-28">
+            <h2 className="font-serif text-2xl mb-6">
+              {t('checkout.orderSummary') || 'Tóm tắt đơn hàng'}
+            </h2>
+            <div className="space-y-4 mb-6 pb-6 border-b border-white/15 max-h-[300px] overflow-y-auto">
+              {items.map((it) => {
+                const name = locale === 'vi' ? it.product.name_vi : it.product.name_en
+                const p = it.product.sale_price ?? it.product.price
+                return (
+                  <div key={it.product.id} className="flex gap-3 text-sm">
+                    <div className="w-12 h-12 rounded-lg overflow-hidden bg-white/10 flex-shrink-0">
+                      <img
+                        src={it.product.image_url || ''}
+                        alt=""
+                        className="w-full h-full object-cover"
+                      />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium line-clamp-1">
-                        {locale === 'vi' ? product.name_vi : product.name_en}
-                      </p>
-                      <p className="text-xs text-text-muted">
-                        {formatPrice(product.sale_price ?? product.price)}đ × {quantity}
-                      </p>
+                      <p className="line-clamp-1 text-white/95">{name}</p>
+                      <p className="text-xs text-white/55">x{it.quantity}</p>
                     </div>
-                  </li>
-                ))}
-              </ul>
-
-              <div className="border-t border-gray-200 my-4 space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-text-muted">{t('cart.subtotal', locale)}</span>
-                  <span>{formatPrice(total + savings)}đ</span>
-                </div>
-                {savings > 0 && (
-                  <div className="flex justify-between text-green-600">
-                    <span>{t('cart.savings', locale)}</span>
-                    <span>-{formatPrice(savings)}đ</span>
+                    <p className="text-white/85">
+                      {formatVND(p * it.quantity)}
+                    </p>
                   </div>
-                )}
-                <div className="flex justify-between">
-                  <span className="text-text-muted">Vận chuyển</span>
-                  <span className="text-green-600">Miễn phí</span>
-                </div>
-              </div>
-
-              <div className="border-t border-gray-200 pt-4 mb-4">
-                <div className="flex justify-between items-center">
-                  <span className="font-semibold">{t('cart.total', locale)}</span>
-                  <span className="text-2xl font-bold text-wine">{formatPrice(total)}đ</span>
-                </div>
-              </div>
-
-              <Button
-                className="w-full"
-                size="lg"
-                loading={loading}
-                onClick={handleSubmit}
-              >
-                {t('checkout.placeOrder', locale)}
-              </Button>
+                )
+              })}
             </div>
-          </div>
-        </div>
+            <div className="space-y-2 mb-6 pb-6 border-b border-white/15">
+              <div className="flex justify-between text-sm">
+                <span className="text-white/70">{t('common.subtotal') || 'Tạm tính'}</span>
+                <span>{formatVND(total)}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-white/70">{t('common.shipping') || 'Vận chuyển'}</span>
+                <span className="text-[#d4a574]">{t('common.free') || 'Miễn phí'}</span>
+              </div>
+            </div>
+            <div className="flex justify-between items-baseline mb-6">
+              <span className="text-sm uppercase tracking-wider text-white/70">
+                {t('common.total') || 'Tổng cộng'}
+              </span>
+              <span className="font-serif text-3xl">
+                {formatVND(total)}
+              </span>
+            </div>
+            <Button
+              type="submit"
+              variant="primary"
+              size="lg"
+              disabled={loading}
+              className="w-full flex items-center justify-center gap-2"
+            >
+              {loading ? (locale === 'vi' ? 'Đang xử lý...' : 'Processing...') : (t('checkout.placeOrder') || 'Đặt hàng')}
+              <ChevronRight className="w-4 h-4" />
+            </Button>
+            <div className="flex items-center justify-center gap-1.5 text-[10px] uppercase tracking-wider text-white/40 mt-4">
+              <Lock className="w-3 h-3" />
+              Secured checkout
+            </div>
+          </aside>
+        </form>
       </div>
-    </div>
+    </main>
+    <Footer />
+    </>
   )
 }

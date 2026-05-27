@@ -33,19 +33,13 @@ CREATE POLICY "Public can send contact messages" ON public.contact_messages
 -- Only admins can read contact messages
 CREATE POLICY "Admin can read contact messages" ON public.contact_messages
   FOR SELECT USING (
-    EXISTS (
-      SELECT 1 FROM public.profiles 
-      WHERE id = auth.uid() AND role = 'admin'
-    )
+    public.is_admin()
   );
 
 -- Only admins can delete contact messages
 CREATE POLICY "Admin can delete contact messages" ON public.contact_messages
   FOR DELETE USING (
-    EXISTS (
-      SELECT 1 FROM public.profiles 
-      WHERE id = auth.uid() AND role = 'admin'
-    )
+    public.is_admin()
   );
 
 -- =============================================
@@ -98,19 +92,13 @@ CREATE POLICY "Users delete own subscription" ON public.newsletter_subscribers
 -- Admin can view all subscribers including inactive
 CREATE POLICY "Admin can view all subscribers" ON public.newsletter_subscribers
   FOR SELECT USING (
-    EXISTS (
-      SELECT 1 FROM public.profiles 
-      WHERE id = auth.uid() AND role = 'admin'
-    )
+    public.is_admin()
   );
 
 -- Admin can manage all subscribers
 CREATE POLICY "Admin manage all subscribers" ON public.newsletter_subscribers
   FOR ALL USING (
-    EXISTS (
-      SELECT 1 FROM public.profiles 
-      WHERE id = auth.uid() AND role = 'admin'
-    )
+    public.is_admin()
   );
 
 -- =============================================

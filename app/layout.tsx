@@ -2,9 +2,6 @@ import type { Metadata } from 'next'
 import { QueryProvider } from '@/providers/QueryProvider'
 import { LocaleProvider } from '@/providers/LocaleProvider'
 import { ToasterProvider } from '@/providers/ToasterProvider'
-import { Navbar } from '@/components/Navbar'
-import { Footer } from '@/components/Footer'
-import { CartDrawer } from '@/components/CartDrawer'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -22,6 +19,9 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'vi_VN',
   },
+  icons: {
+    icon: '/favicon.svg',
+  },
 }
 
 export default function RootLayout({
@@ -31,14 +31,15 @@ export default function RootLayout({
 }) {
   return (
     <html lang="vi">
-      <body className="bg-bg-main min-h-screen flex flex-col">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+      </head>
+      <body className="bg-[#DAD6D6] min-h-screen flex flex-col relative">
         <QueryProvider>
           <LocaleProvider>
             <ToasterProvider>
-              <Navbar />
-              <main className="flex-1">{children}</main>
-              <Footer />
-              <CartDrawer />
+              {children}
             </ToasterProvider>
           </LocaleProvider>
         </QueryProvider>

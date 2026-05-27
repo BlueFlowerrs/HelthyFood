@@ -1,8 +1,8 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap');
 
 @layer base {
   * {
@@ -44,6 +44,10 @@
 
   ::-webkit-scrollbar-thumb:hover {
     background: #6B1E38;
+  }
+
+  input, textarea, select, button {
+    @apply outline-none focus:outline-none;
   }
 }
 
@@ -158,4 +162,15 @@
   .preserve-3d {
     transform-style: preserve-3d;
   }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+[data-tc]::-webkit-scrollbar,
+div[style*="scrollbar"]::-webkit-scrollbar {
+  display: none;
 }

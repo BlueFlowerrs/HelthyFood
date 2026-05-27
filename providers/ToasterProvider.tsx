@@ -6,7 +6,7 @@ export function ToasterProvider({ children }: { children?: React.ReactNode }) {
   return (
     <>
       <Toaster
-        position="top-right"
+        position="bottom-right"
         richColors
         closeButton
         toastOptions={{

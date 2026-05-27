@@ -1,3 +1,5 @@
+import { Navbar } from '@/components/Navbar'
+import { Footer } from '@/components/Footer'
 import { Hero } from '@/features/landing/Hero'
 import { FeaturedProducts } from '@/features/landing/FeaturedProducts'
 import { Categories } from '@/features/landing/Categories'
@@ -10,14 +12,18 @@ import { CTABanner } from '@/features/landing/CTABanner'
 export default function HomePage() {
   return (
     <>
-      <Hero />
-      <Categories />
-      <FeaturedProducts />
-      <MacroShowcase />
-      <Benefits />
-      <Lifestyle />
-      <Testimonials />
-      <CTABanner />
+      <Navbar variant="dark" />
+      <main className="font-sans">
+        <Hero />
+        <FeaturedProducts />
+        <Categories />
+        <Benefits />
+        <MacroShowcase />
+        <Lifestyle />
+        <Testimonials />
+        <CTABanner />
+      </main>
+      <Footer />
     </>
   )
 }
